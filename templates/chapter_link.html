@@ -1,0 +1,31 @@
+<html>
+<body>
+    <table>
+        {% for image in images %}
+            <tr>
+                <td>
+                    <img src="{{ image.image }}" alt="{{ image.title }}">
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+    
+    <table>
+        <tr>
+            <td><a href="{{previous_url}}"></a>previous_url</td>
+            <td><a href="{{next_url}}"></a>next_url</td>
+        </tr>
+    </table>
+
+    <script>
+        document.addEventListener('keydown', function(event) {
+            if (event.keyCode === 37) { // Left arrow key
+                window.location.href = '{{ previous_url }}';
+            } else if (event.keyCode === 39) { // Right arrow key
+                window.location.href = '{{ next_url }}';
+            }
+        });
+    </script>
+</body>
+</body>
+</html>
