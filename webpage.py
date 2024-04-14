@@ -3,39 +3,48 @@ import os
 from pathlib import Path
 from flask import Flask, render_template, send_file, redirect
 import argparse
+import zipfile
+import argparse
+from PIL import Image
+import io
 
 class MangaServed:
     def __init__(self, manga_path):
         self.manga_path = manga_path
-    
+
     @cached_property
-    def folders_list(self):
-        return [x for x in Path(self.manga_path).iterdir() if x.is_dir()]
-    
+    def items_list(self):
+        items = [x for x in Path(self.manga_path).iterdir() if x.is_dir() or x.suffix.lower() == '.cbz']
+        return sorted(items, key=lambda x: x.name)
+
     @cached_property
-    def folder_name_to_path(self):
-        return {x.name: x for x in self.folders_list}
-    
+    def item_name_to_path(self):
+        return {x.name: x for x in self.items_list}
+
     @cached_property
-    def folder_name_list(self):
-        return sorted(list(self.folder_name_to_path.keys()))
-    
+    def item_name_list(self):
+        return sorted(list(self.item_name_to_path.keys()))
+
     @cached_property
-    def folder_name_and_url_tuple_list(self):
-        return [(x, f'chapters/{x}') for x in self.folder_name_list]
-    
+    def item_name_and_url_tuple_list(self):
+        return [(x, f'chapters/{x}') for x in self.item_name_list]
+
     @cached_property
     def chapters_list(self):
-        return self.folder_name_and_url_tuple_list
-    
+        return self.item_name_and_url_tuple_list
+
     @lru_cache
-    def load_chapter_images(self, folder_name):
-        folder_path = self.folder_name_to_path[folder_name]
-        return dict([(x.name,x) for x in folder_path.iterdir() if x.is_file()])    
+    def load_chapter_images(self, item_name):
+        item_path = self.item_name_to_path[item_name]
+        if item_path.is_dir():
+            return dict([(x.name, x) for x in item_path.iterdir() if x.is_file()])
+        elif item_path.suffix.lower() == '.cbz':
+            with zipfile.ZipFile(item_path, 'r') as z:
+                return {name: z.read(name) for name in z.namelist() if name.lower().endswith(('.png', '.jpg', '.jpeg'))}
     
     def __len__(self):
-        return len(self.folders_list)
-    
+        return len(self.items_list)
+
     def __getitem__(self, key):
         return self.load_chapter_images(key)
 
